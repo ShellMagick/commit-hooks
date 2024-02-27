@@ -1,0 +1,16 @@
+### Python ###
+*.egg-info
+*.py[co]
+.*.sw[a-z]
+.coverage
+.tox
+dist
+
+### JetBrains ###
+.idea/**
+
+### Logs ###
+*.log
+
+### Mac OS ###
+.DS_Store
