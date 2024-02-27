@@ -1,0 +1,6 @@
+covdefaults
+coverage
+mutmut
+mypy
+pytest
+pytest-cov

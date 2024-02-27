@@ -1,0 +1,8 @@
+-   id: no-boms
+    name: 'check for BOMs'
+    description: 'Forbids files that have a UTF-8, UTF-16, or UTF-32 byte-order mark (BOM).'
+    entry: no-boms
+    language: python
+    types: [ file ]
+    stages: [ pre-commit, manual ]
+

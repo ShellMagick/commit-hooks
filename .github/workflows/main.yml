@@ -1,0 +1,43 @@
+name: Run tests, etc.
+on:
+  push:
+    branches:
+    - 'main'
+
+jobs:
+  main:
+    name: Run all tests, run static type analysis, coverage, and mutation tests
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v4
+      with:
+        ref: main
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    - run: python -m pip install --upgrade setuptools virtualenv
+    - run: pip install -r requirements-dev.txt
+    - run: mypy hooks
+    - run: pytest --cov=hooks --cov-fail-under=100
+    - run: mutmut run --paths-to-mutate "./hooks/" --use-coverage --no-progress --CI
+
+  combos:
+    name: ${{ matrix.os }} / ${{ matrix.env }}
+    runs-on: ${{ matrix.os }}
+    needs: main
+    strategy:
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+        env: ['3.8', '3.9', '3.10', '3.11']
+    steps:
+    - name: Checkout main branch
+      uses: actions/checkout@v4
+      with:
+        ref: main
+    - uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.env }}
+    - run: python -m pip install --upgrade setuptools virtualenv
+    - run: pip install -r requirements-dev.txt
+    - run: pytest
