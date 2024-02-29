@@ -5,4 +5,10 @@
     language: python
     types: [ file ]
     stages: [ pre-commit, manual ]
-
+-   id: no-todos
+    name: 'check for TODO tags'
+    description: 'Forbids files that have a TODO tag (configurable list, by default: TODO, FIXME, XXX).'
+    entry: no-todos
+    language: python
+    types: [ text ]
+    stages: [ pre-commit, manual ]

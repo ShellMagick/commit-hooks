@@ -6,3 +6,5 @@ def pre_mutation(context):
         context.skip = True
     if line == "if __name__ == '__main__':":
         context.skip = True
+    if line.strip().startswith("help='"):
+        context.skip = True
