@@ -12,3 +12,9 @@
     language: python
     types: [ text ]
     stages: [ pre-commit, manual ]
+-   id: lint-commit-message
+    name: 'basic linting for the commit message itself'
+    description: 'Check the commit message for best practices based on https://cbea.ms/git-commit/'
+    entry: lint-commit-message
+    language: python
+    stages: [ commit-msg, manual ]
