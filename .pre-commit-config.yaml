@@ -1,0 +1,65 @@
+default_install_hook_types: [ commit-msg, pre-commit, prepare-commit-msg ]
+default_stages: [ pre-commit ]
+repos:
+-   repo: https://github.com/ShellMagick/shellmagick-commit-hooks
+    rev: 2ce96f38e4dd815ffd1378d0e8930a4f97a04af4
+    hooks:
+    # We don't use commiticketing in this repo... yet!
+    #-   id: commiticketing
+    #    stages: [ prepare-commit-msg ]
+    -   id: no-boms
+    -   id: no-todos
+        args: [ -e=.pre-commit-hooks.yaml, -e=test_no_todos.py, -e=no_todos.py ]
+    -   id: lint-commit-message
+        stages: [ commit-msg ]
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+    -   id: check-added-large-files
+        args: [ --maxkb=16 ]
+    -   id: check-ast
+        files: '.*\.py$'
+    -   id: check-builtin-literals
+    -   id: check-case-conflict
+    -   id: check-docstring-first
+    -   id: check-json
+    -   id: check-merge-conflict
+        args: [ --assume-in-merge ]
+    -   id: check-xml
+    -   id: check-yaml
+    -   id: double-quote-string-fixer
+    -   id: end-of-file-fixer
+    -   id: forbid-submodules
+    -   id: mixed-line-ending
+    -   id: name-tests-test
+        args: [ --pytest-test-first ]
+    -   id: requirements-txt-fixer
+        files: ^requirements.*\.txt$
+    -   id: trailing-whitespace
+-   repo: https://github.com/asottile/setup-cfg-fmt
+    rev: v2.5.0
+    hooks:
+    -   id: setup-cfg-fmt
+-   repo: https://github.com/asottile/reorder-python-imports
+    rev: v3.12.0
+    hooks:
+    -   id: reorder-python-imports
+        args: [ --py39-plus, --add-import, 'from __future__ import annotations' ]
+-   repo: https://github.com/asottile/add-trailing-comma
+    rev: v3.1.0
+    hooks:
+    -   id: add-trailing-comma
+-   repo: https://github.com/asottile/pyupgrade
+    rev: v3.15.1
+    hooks:
+    -   id: pyupgrade
+        args: [ --py39-plus ]
+# Currently omitting, cf. https://github.com/hhatto/autopep8/issues/720
+#-   repo: https://github.com/hhatto/autopep8
+#    rev: v2.0.4
+#    hooks:
+#    -   id: autopep8
+-   repo: https://github.com/PyCQA/flake8
+    rev: 7.0.0
+    hooks:
+    -   id: flake8

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import argparse
-from typing import Sequence
+from collections.abc import Sequence
 from re import match
 
 
@@ -31,24 +31,32 @@ def main(argv: Sequence[str] | None = None) -> int:
             return 10
 
         # Rule 1: Separate the subject line and the body with an empty line
-        if len(lines) != 1 and match(r"^.+$", lines[1].rstrip()):
-            print('The subject line and body must be separated by an empty line.')
+        if len(lines) != 1 and match(r'^.+$', lines[1].rstrip()):
+            print(
+                'The subject line and body'
+                'must be separated by an empty line.',
+            )
             return 1
 
         # Rule 2: Subject line is limited to 50 characters
-        # -> we by default relax this rule to 72 (modern world, auto-prefixing, etc.)
+        # -> we by default relax this rule to 72
+        #    (modern world, auto-prefixing, etc.)
         # -> can be relaxed via argument
         if len(lines[0]) > int(args.subject_line_length):
-            print(f'The subject line must not be longer than {args.subject_line_length}, '
-                  f'currently it is {len(lines[0])}.')  # pragma: no mutate
+            print(
+                'The subject line must not be longer'
+                f'than {args.subject_line_length}, '
+                f'currently it is {len(lines[0])}.',
+            )
             return 2
 
         # Rule 3: Capitalize the subject line
         # -> Should be done automatically via the prepare-commit-msg hook
 
         # Rule 4: Do not end the subject line with a period
-        # -> We restrict this more, it should not end with any non-word character
-        if match(r"^.*\W$", lines[0].rstrip()):
+        # -> We restrict this more,
+        #    it should not end with any non-word character
+        if match(r'^.*\W$', lines[0].rstrip()):
             print('The subject line must not end with punctuation.')
             return 4
 
@@ -60,9 +68,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         # -> can be relaxed via argument
         for index, line in enumerate(lines[2:]):
             if len(line) > int(args.body_line_length):
-                print(f'Wrap lines of the message body after {args.body_line_length} characters, '
-                      f'currently line {index} is {len(line)} long.'  # pragma: no mutate
-                      f'The line is: "{line}".')  # pragma: no mutate
+                print(
+                    'Wrap lines of the message body'
+                    f'after {args.body_line_length} characters, '
+                    f'currently line {index} is {len(line)} long.'
+                    f'The line is: "{line}".',
+                )
                 return 6
 
         # Rule 7: Use the body to explain what and why vs. how
