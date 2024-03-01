@@ -35,12 +35,12 @@ def main(argv: Sequence[str] | None = None) -> int:
                 if tag in line:
                     if basename(filename) in args.except_in:
                         print(
-                            f'{filename}: contains {tag},'
+                            f'{basename(filename)}: contains {tag}, '
                             'but is on the exception list',
                         )
                         break  # pragma: no mutate
                     result += 1
-                    print(f'{filename}: contains {tag}')
+                    print(f'{basename(filename)}: contains {tag}')
 
     return result
 

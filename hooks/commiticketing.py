@@ -84,7 +84,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     branch = get_active_branch_name()
 
     if not branch:
-        print('Could not reify branch name')
+        print('Could not reify branch name.')
         return 3
 
     with open(args.filename, encoding='utf-8') as msg:
@@ -95,8 +95,8 @@ def main(argv: Sequence[str] | None = None) -> int:
             prefix = get_prefix(branch, two_level_branches)
             if not prefix:
                 print(
-                    f'[{branch}] does not correspond to branch naming rules,'
-                    'consult guidelines',
+                    f'[{branch}] does not correspond to branch naming rules, '
+                    'consult guidelines.',
                 )
                 return 2
 
@@ -113,18 +113,18 @@ def main(argv: Sequence[str] | None = None) -> int:
             if lines[0] != subject_line:
                 with open(args.filename, 'w', encoding='utf-8') as msg:
                     print(
-                        'Commiticketing prefixed your subject line with'
-                        f'[{prefix}] and made it sentence case after',
+                        'Commiticketing prefixed your subject line with '
+                        f'[{prefix}] and made it sentence case after.',
                     )
                     msg.writelines(lines)
             else:
-                print('Commiticketing did not change your subject line')
+                print('Commiticketing did not change your subject line.')
 
             return 0
 
     print(
-        f'You wanted to commit to a branch [{branch}],'
-        'which does not correspond to the commiticketing setup',
+        f'You wanted to commit to a branch [{branch}], '
+        'which does not correspond to the commiticketing setup.',
     )
     return 1
 

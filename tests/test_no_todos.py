@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import unittest
+from unittest.mock import call
+
 from hooks import no_todos
 
 
@@ -11,10 +14,12 @@ def test_no_todos(tmpdir):
 
 
 def test_has_todo(tmpdir):
-    f = tmpdir.join('todo.txt')
-    # noinspection SpellCheckingInspection
-    f.write_text('TODO: ¥eßűs, ∂éñ∂ þħïs!', encoding='utf-8')
-    assert no_todos.main((str(f),)) == 1
+    with unittest.mock.patch('builtins.print') as mocked_print:
+        f = tmpdir.join('todo.txt')
+        # noinspection SpellCheckingInspection
+        f.write_text('TODO: ¥eßűs, ∂éñ∂ þħïs!', encoding='utf-8')
+        assert no_todos.main((str(f),)) == 1
+        assert call('todo.txt: contains TODO') in mocked_print.mock_calls
 
 
 def test_has_fixme(tmpdir):
@@ -32,10 +37,13 @@ def test_has_xxx(tmpdir):
 
 
 def test_has_todo_but_excepted(tmpdir):
-    f = tmpdir.join('todo.txt')
-    # noinspection SpellCheckingInspection
-    f.write_text('TODO: ฿űþ ñ∅™ þħïs!', encoding='utf-8')
-    assert no_todos.main(('-e', 'todo.txt', str(f))) == 0
+    with unittest.mock.patch('builtins.print') as mocked_print:
+        f = tmpdir.join('todo.txt')
+        # noinspection SpellCheckingInspection
+        f.write_text('TODO: ฿űþ ñ∅™ þħïs!', encoding='utf-8')
+        assert no_todos.main(('-e', 'todo.txt', str(f))) == 0
+        assert call('todo.txt: contains TODO, but is on the exception list') \
+               in mocked_print.mock_calls
 
 
 def test_has_machs(tmpdir):

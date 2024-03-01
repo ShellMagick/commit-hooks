@@ -107,10 +107,13 @@ def test_get_prefix(tmpdir, params):
 
 
 def test_not_reified(tmpdir):
-    with tmpdir.as_cwd():
-        f = tmpdir.join('pseudo_commit_msg.txt')
-        f.write_text('Abracadabra', encoding='utf-8')
-        assert commiticketing.main((str(f),)) == 3
+    with unittest.mock.patch('builtins.print') as mocked_print:
+        with tmpdir.as_cwd():
+            f = tmpdir.join('pseudo_commit_msg.txt')
+            f.write_text('Abracadabra', encoding='utf-8')
+            assert commiticketing.main((str(f),)) == 3
+        assert call('Could not reify branch name.') \
+               in mocked_print.mock_calls
 
 
 @pytest.mark.parametrize('branch_name', test_set_2)
@@ -131,14 +134,19 @@ def test_out_of_scope_branch_default(tmpdir, branch_name):
     ],
 )
 def test_out_of_scope_branch_non_default(tmpdir, params):
-    with tmpdir.as_cwd():
-        exec_cmd('git', 'init')
-        exec_cmd('git', 'checkout', '-b', params['branch'])
-        f = tmpdir.join('pseudo_commit_msg.txt')
-        f.write_text('Abracadabra', encoding='utf-8')
-        assert commiticketing.main(
-            ('-b', params['proc'], '-t', params['leveled'], str(f)),
-        ) == 1
+    with unittest.mock.patch('builtins.print') as mocked_print:
+        with tmpdir.as_cwd():
+            exec_cmd('git', 'init')
+            exec_cmd('git', 'checkout', '-b', params['branch'])
+            f = tmpdir.join('pseudo_commit_msg.txt')
+            f.write_text('Abracadabra', encoding='utf-8')
+            assert commiticketing.main(
+                ('-b', params['proc'], '-t', params['leveled'], str(f)),
+            ) == 1
+        assert call(
+            f"You wanted to commit to a branch [{params['branch']}], "
+            'which does not correspond to the commiticketing setup.',
+        ) in mocked_print.mock_calls
 
 
 @pytest.mark.parametrize(
@@ -149,12 +157,17 @@ def test_out_of_scope_branch_non_default(tmpdir, params):
     ),
 )
 def test_in_scope_mismatched_default(tmpdir, branch_name):
-    with tmpdir.as_cwd():
-        exec_cmd('git', 'init')
-        exec_cmd('git', 'checkout', '-b', branch_name)
-        f = tmpdir.join('pseudo_commit_msg.txt')
-        f.write_text('Abracadabra', encoding='utf-8')
-        assert commiticketing.main((str(f),)) == 2
+    with unittest.mock.patch('builtins.print') as mocked_print:
+        with tmpdir.as_cwd():
+            exec_cmd('git', 'init')
+            exec_cmd('git', 'checkout', '-b', branch_name)
+            f = tmpdir.join('pseudo_commit_msg.txt')
+            f.write_text('Abracadabra', encoding='utf-8')
+            assert commiticketing.main((str(f),)) == 2
+        assert call(
+            f'[{branch_name}] does not correspond to branch naming '
+            'rules, consult guidelines.',
+        ) in mocked_print.mock_calls
 
 
 @pytest.mark.parametrize(
@@ -199,8 +212,13 @@ def test_prefix_if_not_there(tmpdir, branch_name):
             f = tmpdir.join('pseudo_commit_msg.txt')
             f.write_text('abracadabra', encoding='utf-8')
             assert commiticketing.main((str(f),)) == 0
-            assert call('Commiticketing did not change your subject line') \
+            assert call('Commiticketing did not change your subject line.') \
                    not in mocked_print.mock_calls
+            assert call(
+                'Commiticketing prefixed your subject line '
+                f'with [{prefix}: ] and made it sentence case'
+                ' after.',
+            ) in mocked_print.mock_calls
             with open(f) as msg:
                 assert msg.readline() == f'{prefix}: Abracadabra'
 
@@ -235,10 +253,10 @@ def test_prefix_not_doubling(tmpdir, params):
             with open(f) as msg:
                 assert msg.readline() == f'{prefix}: Abracadabra'
     if params['msg'] == 'Abracadabra':
-        assert call('Commiticketing did not change your subject line') \
+        assert call('Commiticketing did not change your subject line.') \
                in mocked_print.mock_calls
     elif params['msg'] == 'abracadabra':
-        assert call('Commiticketing did not change your subject line') \
+        assert call('Commiticketing did not change your subject line.') \
                not in mocked_print.mock_calls
 
 

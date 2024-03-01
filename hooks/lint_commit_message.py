@@ -33,7 +33,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Rule 1: Separate the subject line and the body with an empty line
         if len(lines) != 1 and match(r'^.+$', lines[1].rstrip()):
             print(
-                'The subject line and body'
+                'The subject line and body '
                 'must be separated by an empty line.',
             )
             return 1
@@ -44,7 +44,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # -> can be relaxed via argument
         if len(lines[0]) > int(args.subject_line_length):
             print(
-                'The subject line must not be longer'
+                'The subject line must not be longer '
                 f'than {args.subject_line_length}, '
                 f'currently it is {len(lines[0])}.',
             )
@@ -69,9 +69,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         for index, line in enumerate(lines[2:]):
             if len(line) > int(args.body_line_length):
                 print(
-                    'Wrap lines of the message body'
+                    'Wrap lines of the message body '
                     f'after {args.body_line_length} characters, '
-                    f'currently line {index} is {len(line)} long.'
+                    f'currently line {index+1} is {len(line)} long. '
                     f'The line is: "{line}".',
                 )
                 return 6
