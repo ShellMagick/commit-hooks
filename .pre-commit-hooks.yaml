@@ -1,3 +1,9 @@
+-   id: commiticketing
+    name: 'prepend commit message with ticket reference'
+    description: 'Auto-prepend commit message with ticketing system reference based on current branch name.'
+    entry: commiticketing
+    language: python
+    stages: [ prepare-commit-msg, manual ]
 -   id: no-boms
     name: 'check for BOMs'
     description: 'Forbids files that have a UTF-8, UTF-16, or UTF-32 byte-order mark (BOM).'

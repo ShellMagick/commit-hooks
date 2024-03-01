@@ -15,12 +15,12 @@ jobs:
         ref: main
     - uses: actions/setup-python@v5
       with:
-        python-version: '3.11'
+        python-version: '3.12'
     - run: python -m pip install --upgrade setuptools virtualenv
     - run: pip install -r requirements-dev.txt
     - run: mypy hooks
     - run: pytest --cov=hooks --cov-fail-under=100
-    - run: mutmut run --paths-to-mutate "./hooks/" --use-coverage --no-progress --CI
+    - run: mutmut run --paths-to-mutate "./hooks/" --use-coverage --no-progress
 
   combos:
     name: ${{ matrix.os }} / ${{ matrix.env }}
@@ -29,7 +29,7 @@ jobs:
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
-        env: ['3.8', '3.9', '3.10', '3.11']
+        env: ['3.9', '3.10', '3.11', '3.12']
     steps:
     - name: Checkout main branch
       uses: actions/checkout@v4
