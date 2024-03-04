@@ -1,0 +1,32 @@
+name: Releasing ShellMagick commit-hooks
+on:
+  push:
+    tags:
+    - '*'
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    name: Create release from tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+      - name: Get version without alpha/beta
+        id: get-version
+        run: |
+          touch release-notes.md
+          version=$(echo -n ${{ github.ref_name }} | cut -d'-' -f1)
+          grep -A1000000 "# $version" CHANGELOG.md | tail -n+3 | sed '/^# /q' | head -n-2 >> release-notes.md
+          cat release-notes.md
+      - name: Testing
+        id: testing
+        run: cat release-notes.md
+      - name: Create release
+        uses: ncipollo/release-action@v1
+        with:
+          draft: ${{ endsWith(github.ref_name, '-alpha') || endsWith(github.ref_name, '-beta') }}
+          bodyFile: release-notes.md
