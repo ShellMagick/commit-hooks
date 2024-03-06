@@ -11,24 +11,42 @@ from re import match
 def get_active_branch_name() -> str | None:
     """
     Source: https://stackoverflow.com/a/62724213/5471574
+        and https://stackoverflow.com/a/59115583/5471574
 
     This works for us, because the current working directory (i.e., current
     working directory) _IS_ the git repository.
 
+    By default, and when in a conflicting rebase-apply, HEAD is found.
+
+    During conflicting rebase-merge, we go via head-name.
+
     :return: The name of the currently checked out branch
     """
-    head_dir = Path('.') / '.git' / 'HEAD'
+    head = None
     try:
-        with head_dir.open('r') as f:
+        with (Path('.') / '.git' / 'HEAD').open('r') as f:
             content = f.read().splitlines()
 
         for line in content:
             if line[:4] == 'ref:':
-                return line.partition('refs/heads/')[2]
+                head = line.removeprefix('ref: refs/heads/')
+        if head:
+            return head
+
+        with (
+            Path('.') / '.git' / 'rebase-merge' / 'head-name'
+        ).open('r') as f:
+            content = f.read().splitlines()
+
+        for line in content:
+            head = line.removeprefix('refs/heads/')
+        if head:
+            return head
+
     except FileNotFoundError:
         pass
 
-    return None
+    return head
 
 
 def get_prefix(branch: str, two_level_branches: Iterable[str]) -> str | None:

@@ -2,11 +2,10 @@ default_install_hook_types: [ commit-msg, pre-commit, prepare-commit-msg ]
 default_stages: [ pre-commit ]
 repos:
 -   repo: https://github.com/ShellMagick/shellmagick-commit-hooks
-    rev: 2ce96f38e4dd815ffd1378d0e8930a4f97a04af4
+    rev: v24.03
     hooks:
-    # We don't use commiticketing in this repo... yet!
-    #-   id: commiticketing
-    #    stages: [ prepare-commit-msg ]
+    -   id: commiticketing
+        stages: [ prepare-commit-msg ]
     -   id: no-boms
     -   id: no-todos
         args: [ -e=.pre-commit-hooks.yaml, -e=test_no_todos.py, -e=no_todos.py, -e=README.md, -e=CHANGELOG.md ]

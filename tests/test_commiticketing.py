@@ -3,10 +3,12 @@ from __future__ import annotations
 import random
 import subprocess
 import unittest
+from pathlib import Path
 from typing import Any
 from unittest.mock import call
 
 import pytest
+from typing_extensions import Buffer
 
 from hooks import commiticketing
 
@@ -15,7 +17,8 @@ class CalledProcessError(RuntimeError):
     pass
 
 
-def exec_cmd(*cmd: str, return_code: int | None = 0, **kwargs: Any) -> str:
+def exec_cmd(*cmd: str, return_code: int | None = 0, **kwargs: Any) \
+        -> str | Buffer:
     kwargs.setdefault('stdout', subprocess.PIPE)
     kwargs.setdefault('stderr', subprocess.PIPE)
     proc = subprocess.Popen(cmd, **kwargs)
@@ -77,6 +80,58 @@ def test_get_active_branch_name_switcheroo(tmpdir, branch_name):
         assert commiticketing.get_active_branch_name() == pseudo
         exec_cmd('git', 'checkout', '-b', branch_name)
         assert commiticketing.get_active_branch_name() == branch_name
+
+
+def test_get_active_branch_name_during_rebase(tmpdir):
+    with tmpdir.as_cwd():
+        exec_cmd('git', 'init')
+        exec_cmd('git', 'checkout', '-b', 'base')
+        exec_cmd('git', 'commit', '--allow-empty', '-m', 'base commit')
+        exec_cmd('git', 'checkout', '-b', 'to-rebase')
+        f = tmpdir.join('conflicting.txt')
+        f.write_text('Abracadabra', encoding='utf-8')
+        exec_cmd('git', 'add', 'conflicting.txt')
+        exec_cmd('git', 'commit', '-m', '1')
+        exec_cmd('git', 'checkout', 'base')
+        exec_cmd('git', 'checkout', '-b', 'rebase-onto')
+        f = tmpdir.join('conflicting.txt')
+        f.write_text('Bananas', encoding='utf-8')
+        exec_cmd('git', 'add', 'conflicting.txt')
+        exec_cmd('git', 'commit', '-m', '2')
+        exec_cmd('git', 'checkout', 'to-rebase')
+        exec_cmd('git', 'rebase', 'rebase-onto', return_code=1)
+        assert commiticketing.get_active_branch_name() == 'to-rebase'
+
+
+def test_get_active_branch_name_during_patch(tmpdir):
+    with tmpdir.as_cwd():
+        exec_cmd('git', 'init')
+        exec_cmd('git', 'checkout', '-b', 'base')
+        exec_cmd('git', 'commit', '--allow-empty', '-m', 'base commit')
+        exec_cmd('git', 'checkout', '-b', 'to-rebase')
+        f = tmpdir.join('conflicting.txt')
+        f.write_text('Abra', encoding='utf-8')
+        exec_cmd('git', 'add', 'conflicting.txt')
+        exec_cmd('git', 'commit', '-m', '1')
+        f.write_text('Abracadabra', encoding='utf-8')
+        exec_cmd('git', 'add', 'conflicting.txt')
+        exec_cmd('git', 'commit', '-m', '2')
+        exec_cmd('git', 'checkout', 'base')
+        exec_cmd('git', 'checkout', '-b', 'rebase-onto')
+        f = tmpdir.join('conflicting.txt')
+        f.write_text('Ba', encoding='utf-8')
+        exec_cmd('git', 'add', 'conflicting.txt')
+        exec_cmd('git', 'commit', '-m', '3')
+        f.write_text('Bananas', encoding='utf-8')
+        exec_cmd('git', 'add', 'conflicting.txt')
+        exec_cmd('git', 'commit', '-m', '4')
+        exec_cmd('git', 'checkout', 'to-rebase')
+        p = Path(tmpdir.join('test.patch'))
+        p.write_bytes(
+            exec_cmd('git', 'format-patch', '-2', 'to-rebase', '--stdout'),
+        )
+        exec_cmd('git', 'am', p.as_posix(), return_code=128)
+        assert commiticketing.get_active_branch_name() == 'to-rebase'
 
 
 @pytest.mark.parametrize('branch_name', test_set_2)
