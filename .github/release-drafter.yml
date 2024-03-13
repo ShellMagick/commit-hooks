@@ -1,19 +1,19 @@
-name-template: 'v_NEXT_ 🌈'
+name-template: 'Upcoming release 🌈'
 categories:
+  - title: '🐛 Bug Fixes'
+    labels:
+      - 'bug'
   - title: '🎣 New hooks'
     labels:
       - 'new hook'
-  - title: '🚀 Features'
+  - title: '🛀 Features & Convenience'
     labels:
       - 'feature'
       - 'enhancement'
-  - title: '🐛 Bug Fixes'
-    labels:
-      - 'bugfix'
-  - title: '📃 Documentation'
+  - title: '📜 Documentation'
     labels:
       - 'documentation'
-change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
+change-template: '- $TITLE (#$NUMBER)'
 change-title-escapes: '\<*_&'
 template: |
   ## Changes

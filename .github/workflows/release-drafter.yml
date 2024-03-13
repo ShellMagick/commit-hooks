@@ -10,9 +10,10 @@ permissions:
 
 jobs:
   update-release-draft:
+    runs-on: ubuntu-latest
+    name: Update release notes
     permissions:
       contents: write
-    runs-on: ubuntu-latest
     steps:
       - uses: release-drafter/release-drafter@v5
         env:

@@ -1,0 +1,21 @@
+name: Copy issue labels into pull request
+
+on:
+  pull_request:
+    types: [ opened, edited, synchronize ]
+
+jobs:
+  copy-labels:
+    runs-on: ubuntu-latest
+    name: Copy labels from referenced issues
+    permissions:
+      issues: read
+      pull-requests: write
+    steps:
+      - name: copy-labels
+        uses: michalvankodev/copy-issue-labels@v1.3.0
+        with:
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+          labels-to-exclude: |
+            good first issue
+            help wanted

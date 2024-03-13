@@ -1,4 +1,4 @@
-name: Run tests, etc.
+name: Testing pipeline
 on:
   push:
     branches:
@@ -8,8 +8,8 @@ on:
 
 jobs:
   sanity-run:
-    name: Run tests on lowest supported Python version on Ubuntu as a sanity-check before doing anything else
     runs-on: ubuntu-latest
+    name: Run tests on lowest supported Python version on Ubuntu as a sanity-check before doing anything else
     steps:
     - name: Checkout main branch
       uses: actions/checkout@v4
@@ -23,8 +23,8 @@ jobs:
     - run: pytest --cov=hooks --cov-fail-under=100
 
   main:
-    name: Run all tests, run static type analysis, coverage, and mutation tests
     runs-on: ubuntu-latest
+    name: Run all tests, run static type analysis, coverage, and mutation tests
     needs: sanity-run
     steps:
     - name: Checkout main branch
@@ -41,8 +41,8 @@ jobs:
     - run: mutmut run --paths-to-mutate "./hooks/" --use-coverage --no-progress
 
   combos:
-    name: ${{ matrix.os }} / ${{ matrix.env }}
     runs-on: ${{ matrix.os }}
+    name: ${{ matrix.os }} / ${{ matrix.env }}
     needs: main
     strategy:
       matrix:
