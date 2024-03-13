@@ -22,7 +22,7 @@ Add this to your `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/ShellMagick/commit-hooks
-    rev: v24.03  # Use the ref you want to point at
+    rev: v24.03.1  # Use the ref you want to point at
     hooks:
     -   id: no-todos
     # -   id: ...
@@ -37,7 +37,7 @@ default_install_hook_types: [ commit-msg, pre-commit, prepare-commit-msg ]
 default_stages: [ pre-commit ]
 repos:
 -   repo: https://github.com/ShellMagick/commit-hooks
-    rev: v24.03
+    rev: v24.03.1
     hooks:
     -   id: commiticketing
         stages: [ prepare-commit-msg ]
@@ -63,7 +63,6 @@ repos:
     -   id: mixed-line-ending
     -   id: no-commit-to-branch
         args: [ --branch=develop, --branch=release, --branch=master ]
-    -   id: pretty-format-json
     -   id: trailing-whitespace
 ```
 
