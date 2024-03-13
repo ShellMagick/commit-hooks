@@ -86,6 +86,8 @@ def test_get_active_branch_name_during_rebase(tmpdir):
     with tmpdir.as_cwd():
         exec_cmd('git', 'init')
         exec_cmd('git', 'checkout', '-b', 'base')
+        exec_cmd('git', 'config', 'user.email', 'joe@banana.br')
+        exec_cmd('git', 'config', 'user.name', 'Banana Joe')
         exec_cmd('git', 'commit', '--allow-empty', '-m', 'base commit')
         exec_cmd('git', 'checkout', '-b', 'to-rebase')
         f = tmpdir.join('conflicting.txt')
@@ -106,6 +108,8 @@ def test_get_active_branch_name_during_rebase(tmpdir):
 def test_get_active_branch_name_during_patch(tmpdir):
     with tmpdir.as_cwd():
         exec_cmd('git', 'init')
+        exec_cmd('git', 'config', 'user.email', 'joe@banana.br')
+        exec_cmd('git', 'config', 'user.name', 'Banana Joe')
         exec_cmd('git', 'checkout', '-b', 'base')
         exec_cmd('git', 'commit', '--allow-empty', '-m', 'base commit')
         exec_cmd('git', 'checkout', '-b', 'to-rebase')

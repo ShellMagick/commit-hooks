@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-import unittest
-from unittest.mock import call
+from unittest.mock import patch
 
 from hooks import no_todos
 
@@ -14,12 +13,13 @@ def test_no_todos(tmpdir):
 
 
 def test_has_todo(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = tmpdir.join('todo.txt')
         # noinspection SpellCheckingInspection
         f.write_text('TODO: ¥eßűs, ∂éñ∂ þħïs!', encoding='utf-8')
         assert no_todos.main((str(f),)) == 1
-        assert call('todo.txt: contains TODO') in mocked_print.mock_calls
+        assert mocked_print.call_args_list[0].args[0] \
+            .endswith('todo.txt: contains TODO')
 
 
 def test_has_fixme(tmpdir):
@@ -37,13 +37,13 @@ def test_has_xxx(tmpdir):
 
 
 def test_has_todo_but_excepted(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = tmpdir.join('todo.txt')
         # noinspection SpellCheckingInspection
         f.write_text('TODO: ฿űþ ñ∅™ þħïs!', encoding='utf-8')
         assert no_todos.main(('-e', 'todo.txt', str(f))) == 0
-        assert call('todo.txt: contains TODO, but is on the exception list') \
-               in mocked_print.mock_calls
+        assert mocked_print.call_args_list[0].args[0] \
+            .endswith('todo.txt: contains TODO, but is on the exception list')
 
 
 def test_has_machs(tmpdir):
