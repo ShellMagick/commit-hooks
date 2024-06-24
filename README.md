@@ -22,9 +22,9 @@ Add this to your `.pre-commit-config.yaml`:
 
 ```yaml
 -   repo: https://github.com/ShellMagick/commit-hooks
-    rev: v24.03  # Use the ref you want to point at
+    rev: v24.06  # Use the ref you want to point at
     hooks:
-    -   id: no-todos
+    -   id: no-boms
     # -   id: ...
 ```
 
@@ -37,34 +37,13 @@ default_install_hook_types: [ commit-msg, pre-commit, prepare-commit-msg ]
 default_stages: [ pre-commit ]
 repos:
 -   repo: https://github.com/ShellMagick/commit-hooks
-    rev: v24.03
+    rev: v24.06
     hooks:
     -   id: commiticketing
-        stages: [ prepare-commit-msg ]
     -   id: no-boms
     -   id: no-todos
     -   id: lint-commit-message
-        stages: [ commit-msg ]
--   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
-    hooks:
-    -   id: check-added-large-files
-        args: [ --maxkb=128 ]
-    -   id: check-case-conflict
-    -   id: check-json
-    -   id: check-merge-conflict
-        args: [ --assume-in-merge ]
-    -   id: check-toml
-    -   id: check-xml
-    -   id: check-yaml
-    -   id: detect-private-key
-    -   id: end-of-file-fixer
-    -   id: forbid-submodules
-    -   id: mixed-line-ending
-    -   id: no-commit-to-branch
-        args: [ --branch=develop, --branch=release, --branch=master ]
-    -   id: pretty-format-json
-    -   id: trailing-whitespace
+...
 ```
 
 ## Available hooks
@@ -154,7 +133,8 @@ The linter checks the following (corresponding the rules from the linked article
         </ul>
     </li>
     <li>❌ Is not checked (would be "Capitilize the subject line"). Use <code>commiticketing</code> instead.</li>
-    <li>✅ The subject line does not end with non-word character (i.e., non-alphanumeric character).
+    <li>✅ The subject line does not end with a punctuation character (i.e., matching the regex
+        <code>[.,;?!\\-]$</code>).
         <ul>
            <li>Note: This is stricter than the proposed rule "do not end the subject line with a period" by the
                      article.</li>
@@ -175,8 +155,11 @@ The linter checks the following (corresponding the rules from the linked article
 
 This hook has two optional arguments:
 
-* `-sl/--subject-line-length:` adjust the parameter of rule 2 (default value: 72).
-* `-bl/--body-line-length:` adjust the parameter of rule 6 (default value: 120).
+* `-sl/--subject-line-length`: adjust the parameter of rule 2 (default value: `72`).
+* `-bl/--body-line-length`: adjust the parameter of rule 6 (default value: `120`).
+* `-e/--ending`: adjust the parameter of rule 4 (default: `[.,;?!\\-]`)
+  * Example: In case you want to forbid any non-alphanumeric-character, you could use `\\W` as parameter (note that this
+    forbids parentheses too).
 
 #### Side effects
 

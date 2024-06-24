@@ -20,6 +20,13 @@ def main(argv: Sequence[str] | None = None) -> int:
         default='120',
         help='Maximum length of lines in the body (default: 120)',
     )
+    parser.add_argument(
+        '-e',
+        '--ending',
+        default='[.,;?!\\-]',
+        help='Regex, defining forbidden characters for ending the subject line'
+             ' (default: [.,;?!\\-])',
+    )
     args = parser.parse_args(argv)
 
     with open(args.filename, encoding='utf-8') as msg:
@@ -56,7 +63,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         # Rule 4: Do not end the subject line with a period
         # -> We restrict this more,
         #    it should not end with any non-word character
-        if match(r'^.*\W$', lines[0].rstrip()):
+        if match(r'^.*%s$' % args.ending, lines[0].rstrip()):
             print('The subject line must not end with punctuation.')
             return 4
 

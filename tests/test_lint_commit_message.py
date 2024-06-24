@@ -69,14 +69,40 @@ def test_subject_line_relaxed_too_long(tmpdir):
     assert lint_commit_message.main(('-sl', '73', str(f))) == 2
 
 
-@pytest.mark.parametrize('commit_msg', ['Hello!', 'Bye?', 'Oy.'])
-def test_subject_line_ends_with_punctuation(tmpdir, commit_msg):
+@pytest.mark.parametrize(
+    'commit_msg',
+    ['Hello!', 'Bye?', 'Oy.', 'Some (thing)', 'Hey /ho/'],
+)
+def test_subject_line_ends_with_punctuation_and_regex(tmpdir, commit_msg):
+    with unittest.mock.patch('builtins.print') as mocked_print:
+        f = tmpdir.join('pseudo_commit_msg.txt')
+        f.write_text(commit_msg, encoding='utf-8')
+        assert lint_commit_message.main(('-e', '\\W', str(f))) == 4
+        assert call('The subject line must not end with punctuation.') \
+               in mocked_print.mock_calls
+
+
+@pytest.mark.parametrize(
+    'commit_msg',
+    ['Hello!', 'Bye?', 'Oy.'],
+)
+def test_subject_line_ends_forbidden_default(tmpdir, commit_msg):
     with unittest.mock.patch('builtins.print') as mocked_print:
         f = tmpdir.join('pseudo_commit_msg.txt')
         f.write_text(commit_msg, encoding='utf-8')
         assert lint_commit_message.main((str(f),)) == 4
         assert call('The subject line must not end with punctuation.') \
                in mocked_print.mock_calls
+
+
+@pytest.mark.parametrize(
+    'commit_msg',
+    ['Some (thing)', 'Hey /ho/'],
+)
+def test_subject_line_ends_enabled_default(tmpdir, commit_msg):
+    f = tmpdir.join('pseudo_commit_msg.txt')
+    f.write_text(commit_msg, encoding='utf-8')
+    assert lint_commit_message.main((str(f),)) == 0
 
 
 def test_body_line_too_long(tmpdir):
