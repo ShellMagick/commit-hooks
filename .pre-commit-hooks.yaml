@@ -1,3 +1,21 @@
+-   id: cojira-branch
+    name: 'cross-check with JIRA when creating a branch'
+    description: 'Cross check referenced ticket status in JIRA'
+    entry: cojira_pc
+    language: python
+    stages: [ post-checkout, manual ]
+-   id: cojira-commit
+    name: 'cross-check with JIRA when commiting'
+    description: 'Cross check referenced ticket status in JIRA'
+    entry: cojira_c
+    language: python
+    stages: [ prepare-commit-msg, manual ]
+-   id: cojira-push
+    name: 'cross-check with JIRA when pushing'
+    description: 'Cross check referenced ticket status in JIRA'
+    entry: cojira_p
+    language: python
+    stages: [ pre-push, manual ]
 -   id: commiticketing
     name: 'prepend commit message with ticket reference'
     description: 'Auto-prepend commit message with ticketing system reference based on current branch name.'
