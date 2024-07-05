@@ -75,20 +75,20 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument(
         '-e', '--exclude-long-prefix', action='append',
         help='Do not add long prefix for these branches'
-             '(by default: feature, user, backup), '
-             'may be specified multiple times',
+             ' (by default: feature, user, backup),'
+             ' may be specified multiple times',
     )
     parser.add_argument(
         '-t', '--two-level', action='append',
         help='Get prefix from second level,'
-             'if branch starts with this (by default: user, backup), '
-             'may be specified multiple times',
+             ' if branch starts with this (by default: user, backup),'
+             ' may be specified multiple times',
     )
     parser.add_argument(
         '-b', '--branch', action='append',
-        help='Branch to process with this hook '
-             '(by default: feature, bugfix, hotfix), '
-             'may be specified multiple times',
+        help='Branch to process with this hook'
+             ' (by default: feature, bugfix, hotfix),'
+             ' may be specified multiple times',
     )
     args = parser.parse_args(argv)
 

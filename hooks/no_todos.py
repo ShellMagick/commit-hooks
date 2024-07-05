@@ -10,15 +10,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument('filenames', nargs='*', help='Filenames to check')
     parser.add_argument(
         '-t', '--todo-tag', action='append',
-        help='TODO tag to disallow as file content '
-             '(by default: TODO, FIXME, XXX), '
-             'may be specified multiple times',
+        help='TODO tag to disallow as file content'
+             ' (by default: TODO, FIXME, XXX),'
+             ' may be specified multiple times',
     )
     parser.add_argument(
         '-e', '--except-in', action='append', default=[],
         help='Except in these files '
-             '(i.e., a file with this name is allowed to contain the tags), '
-             'may be specified multiple times',
+             '(i.e., a file with this name is allowed to contain the tags),'
+             ' may be specified multiple times',
     )
     args = parser.parse_args(argv)
 

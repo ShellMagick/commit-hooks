@@ -2,7 +2,7 @@ default_install_hook_types: [ commit-msg, pre-commit, prepare-commit-msg ]
 default_stages: [ pre-commit ]
 repos:
 -   repo: https://github.com/ShellMagick/shellmagick-commit-hooks
-    rev: v24.03.1
+    rev: v24.06
     hooks:
     -   id: commiticketing
         args: [ -t= ]
@@ -19,7 +19,7 @@ repos:
     -   id: fix-ligatures
     -   id: forbid-bidi-controls
 -   repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v4.6.0
     hooks:
     -   id: check-added-large-files
         args: [ --maxkb=16 ]
@@ -47,7 +47,7 @@ repos:
     hooks:
     -   id: setup-cfg-fmt
 -   repo: https://github.com/asottile/reorder-python-imports
-    rev: v3.12.0
+    rev: v3.13.0
     hooks:
     -   id: reorder-python-imports
         args: [ --py39-plus, --add-import, 'from __future__ import annotations' ]
@@ -56,7 +56,7 @@ repos:
     hooks:
     -   id: add-trailing-comma
 -   repo: https://github.com/asottile/pyupgrade
-    rev: v3.15.1
+    rev: v3.16.0
     hooks:
     -   id: pyupgrade
         args: [ --py39-plus ]
@@ -66,6 +66,6 @@ repos:
 #    hooks:
 #    -   id: autopep8
 -   repo: https://github.com/PyCQA/flake8
-    rev: 7.0.0
+    rev: 7.1.0
     hooks:
     -   id: flake8
