@@ -5,12 +5,16 @@ Commit hooks based on experience, needs in teams I have worked, and acquired tas
 This repository uses the [pre-commit](https://pre-commit.com/) framework
 and is heavily influenced by their [out-of-the-box hooks](https://github.com/pre-commit/pre-commit-hooks/).
 
-Notably, hooks in this repository do not support Python 3.8, only 3.9 and above.
-This is, because [`str.removeprefix`](https://docs.python.org/3.9/library/stdtypes.html#str.removeprefix) is used,
-which has been introduced with Python 3.9.
+> [!IMPORTANT]
+> Notably, hooks in this repository do not support Python 3.8, only 3.9 and above.
+> This is, because [`str.removeprefix`](https://docs.python.org/3.9/library/stdtypes.html#str.removeprefix) is used,
+> which has been introduced with Python 3.9.
 
 ## Listing of hooks
 
+In order of proposed configuration:
+
+* _**EXPERIMENTAL**_ [`cojira`](#cojira)
 * [`commiticketing`](#commiticketing)
 * [`lint-commit-message`](#lint-commit-message)
 * [`no-boms`](#no-boms)
@@ -39,14 +43,74 @@ repos:
 -   repo: https://github.com/ShellMagick/commit-hooks
     rev: v24.06
     hooks:
-    -   id: commiticketing
     -   id: no-boms
     -   id: no-todos
+    -   id: commiticketing
+    -   id: cojira
+        verbose: true
+        args: [ '-l', '-u=$JIRA_URI', '-p=$JIRA_PAT', '-v=$ALLOWED_VERSIONS' ]
     -   id: lint-commit-message
 ...
 ```
 
+We propose that `cojira` should be configured _after_ `commiticketing`.
+This way `commiticketing` can prefix your commit message, if needed, and thus `cojira` can check without problems.
+
 ## Available hooks
+
+### `cojira`
+
+> [!WARNING]
+> Consider this hook as _**EXPERIMENTAL**_ in the sense of a) expect clumsy UX b) do not be surprised by minor bugs
+
+In case you are working with a ticketing system, and you want to "bind" your commits to tickets (cf. [`commiticketing`](#commiticketing)),
+you may also want to make sure that the referenced ticket is in a "desired" state.
+
+This pre-commit hook can look up basic status of a JIRA-ticket based on the arguments given.
+
+> [!IMPORTANT]
+> Consider enabling verbose output for this hook, so that you see inline feedback.
+
+#### Arguments
+
+* `-l/--lenient`: The hook is lenient regarding configuration. Enables a "soft onboarding" of this hook in projects.
+  * In case specified, but no JIRA URI-root given (either parameter missing, or it is resolved as an empty String), then the hook early-exist with "success".
+* `-u/--jira-uri`: the URI-root for your JIRA instance.
+  * In case it starts with `$`, it will be interpreted as an environment variable.
+* `-p/--jira-pat`: the PAT (personal access token) to be used for queries against the JIRA REST API (`<-u>/rest/api/latest/issue/<ticket>`).
+  * In case it starts with `$`, it will be interpreted as an environment variable.
+* `-i/--allow-status-category`: Defines an "allowed" ("included") status category. This argument is repeatable.
+  * These take precendence over "disallowed" ("excluded") categories.
+  * By default this is an empty list (i.e., a category is implicitly "allowed" if and only if it is not "disallowed").
+  * JSONPath of status category is: `$.fields.status.statusCategory.key`.
+* `-e/--disallow-status-category`: Defines an "disallowed" ("excluded") status category. This argument is repeatable.
+  * In case none are specified, by default this contains the status category "done".
+  * In case at least one are specified, only the specified values are considered.
+  * JSONPath of status category is: `$.fields.status.statusCategory.key`.
+* `-v/--allowed-fix-version`: Defines an "allowed" fix version. This argument is repeatable.
+  * In case it starts with `$`, it will be interpreted as an environment variable.
+  * In case none are given, no check for fix versions is performed.
+  * JSONPath of fix version is: `$.fields.fixVersions[0].name`, i.e., only the first fix version of the ticket is checked.
+    In case multiple fix versions are defined on the ticket, that is considered an error (i.e., as if no fix versions were specified).
+
+#### Possible outputs
+
+Presuming correct configuration of JIRA URI and PAT, some examples of possible results are:
+
+* "Could not reify ticket from commit message" with return code `4` in case the commit message does not start with a ticketing reference (cf. [`commiticketing`](#commiticketing)).
+* "Ticket has no fix version, but it is expected" with return code `3` in case the fix version in JIRA is empty (or multiple fix versions are defined), but `-v` is at least once defined for the hook.
+* "Fix version of ticket ("{ticket_version}") is not allowed" with return code `2` in case the fix version in JIRA is not empty, but does not correspond to any value given via `-v`.
+* "Ticket status category ("{category}") is not allowed" with return code `1` in case the status category is not on the "allowed" list (`-i`) and is on the "disallowed" list (`-e`).
+* "Ticket is OK according to COJIRA rules" with return code `0` if everything is according to expectations.
+
+#### Side effect
+
+In case:
+* the JIRA REST API could not be queried (incorrect URI/PAT)
+* **or** the "allowed" fix version list is not empty **and** the ticket's fix version is not in the "allowed" fix version list
+* **or** the ticket's status category is not in the "allowed" list **and** the ticket's status category is on the "disallowed" list
+
+then the pre-commit hook results in a failure. No changes will be done in your repository (files and commits are not touched by this hook).
 
 ### `commiticketing`
 

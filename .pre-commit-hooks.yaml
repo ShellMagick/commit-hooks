@@ -1,3 +1,9 @@
+-   id: cojira
+    name: 'cross-check with JIRA when commiting'
+    description: 'Cross check referenced ticket status in JIRA'
+    entry: cojira
+    language: python
+    stages: [ prepare-commit-msg, manual ]
 -   id: commiticketing
     name: 'prepend commit message with ticket reference'
     description: 'Auto-prepend commit message with ticketing system reference based on current branch name.'
