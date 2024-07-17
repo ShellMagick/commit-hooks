@@ -6,6 +6,8 @@ on:
     - 'main'
     - 'feature/*'
     - 'bugfix/*'
+  issue_comment:
+    types: [created]
 
 jobs:
   sanity-run:
@@ -15,7 +17,7 @@ jobs:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ github.head_ref || github.ref_name }}
     - uses: actions/setup-python@v5
       with:
         python-version: '3.9'
@@ -24,6 +26,7 @@ jobs:
     - run: pytest --cov=hooks --cov-fail-under=100
 
   main:
+    if: ${{ (github.ref == 'refs/heads/main') || (contains(github.event.comment.html_url, '/pull/') && (contains(github.event.comment.body, '/full-build') || contains(github.event.comment.body, '/mutate'))) }}
     runs-on: ubuntu-latest
     name: Run all tests, run static type analysis, coverage, and mutation tests
     needs: sanity-run
@@ -31,7 +34,7 @@ jobs:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ github.head_ref || github.ref_name }}
     - uses: actions/setup-python@v5
       with:
         python-version: '3.12'
@@ -42,7 +45,7 @@ jobs:
     - run: mutmut run --paths-to-mutate "./hooks/" --use-coverage --no-progress
 
   combos:
-    if: github.ref == 'refs/heads/main'
+    if: ${{ (github.ref == 'refs/heads/main') || (contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, '/full-build')) }}
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }} / ${{ matrix.env }}
     needs: main
@@ -61,7 +64,7 @@ jobs:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ github.head_ref || github.ref_name }}
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.env }}
