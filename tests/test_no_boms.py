@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import unittest
 from pathlib import Path
 from unittest.mock import call
@@ -20,8 +21,8 @@ def test_utf32_bom_le(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 13
-        assert call('bom32le.txt: has a UTF-32 BOM (LE)') \
-               in mocked_print.mock_calls
+        assert re.match(r'^.*[\\/]bom32le\.txt: has a UTF-32 BOM \(LE\)$',
+                        mocked_print.call_args.args[0]) is not None
 
 
 def test_utf32_bom_be(tmpdir):
@@ -37,8 +38,8 @@ def test_utf32_bom_be(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 11
-        assert call('bom32be.txt: has a UTF-32 BOM (BE)') \
-               in mocked_print.mock_calls
+        assert re.match(r'^.*[\\/]bom32be\.txt: has a UTF-32 BOM \(BE\)$',
+                        mocked_print.call_args.args[0]) is not None
 
 
 def test_utf16_bom_le(tmpdir):
@@ -54,8 +55,8 @@ def test_utf16_bom_le(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 7
-        assert call('bom16le.txt: has a UTF-16 BOM (LE)') \
-               in mocked_print.mock_calls
+        assert re.match(r'^.*[\\/]bom16le\.txt: has a UTF-16 BOM \(LE\)$',
+                        mocked_print.call_args.args[0]) is not None
 
 
 def test_utf16_bom_be(tmpdir):
@@ -71,8 +72,8 @@ def test_utf16_bom_be(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 5
-        assert call('bom16be.txt: has a UTF-16 BOM (BE)') \
-               in mocked_print.mock_calls
+        assert re.match(r'^.*[\\/]bom16be\.txt: has a UTF-16 BOM \(BE\)$',
+                        mocked_print.call_args.args[0]) is not None
 
 
 def test_utf8_bom_directly(tmpdir):
@@ -88,8 +89,8 @@ def test_utf8_bom_directly(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 3
-        assert call('bom8.txt: has a UTF-8 BOM') \
-               in mocked_print.mock_calls
+        assert re.match(r'^.*[\\/]bom8\.txt: has a UTF-8 BOM$',
+                        mocked_print.call_args.args[0]) is not None
 
 
 def test_utf8_bom_via_encoding(tmpdir):
