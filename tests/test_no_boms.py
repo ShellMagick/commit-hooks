@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import re
-import unittest
 from pathlib import Path
-from unittest.mock import call
+from unittest.mock import patch
 
 from hooks import no_boms
 
 
 def test_utf32_bom_le(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = Path(tmpdir.join('bom32le.txt'))
         f.write_bytes(
             b'\xff\xfe\x00\x00'
@@ -21,12 +19,12 @@ def test_utf32_bom_le(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 13
-        assert re.match(r'^.*[\\/]bom32le\.txt: has a UTF-32 BOM \(LE\)$',
-                        mocked_print.call_args.args[0]) is not None
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('bom32le.txt: has a UTF-32 BOM (LE)')
 
 
 def test_utf32_bom_be(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = Path(tmpdir.join('bom32be.txt'))
         f.write_bytes(
             b'\x00\x00\xfe\xff'
@@ -38,12 +36,12 @@ def test_utf32_bom_be(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 11
-        assert re.match(r'^.*[\\/]bom32be\.txt: has a UTF-32 BOM \(BE\)$',
-                        mocked_print.call_args.args[0]) is not None
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('bom32be.txt: has a UTF-32 BOM (BE)')
 
 
 def test_utf16_bom_le(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = Path(tmpdir.join('bom16le.txt'))
         f.write_bytes(
             b'\xff\xfe'
@@ -55,12 +53,12 @@ def test_utf16_bom_le(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 7
-        assert re.match(r'^.*[\\/]bom16le\.txt: has a UTF-16 BOM \(LE\)$',
-                        mocked_print.call_args.args[0]) is not None
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('bom16le.txt: has a UTF-16 BOM (LE)')
 
 
 def test_utf16_bom_be(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = Path(tmpdir.join('bom16be.txt'))
         f.write_bytes(
             b'\xfe\xff'
@@ -72,12 +70,12 @@ def test_utf16_bom_be(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 5
-        assert re.match(r'^.*[\\/]bom16be\.txt: has a UTF-16 BOM \(BE\)$',
-                        mocked_print.call_args.args[0]) is not None
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('bom16be.txt: has a UTF-16 BOM (BE)')
 
 
 def test_utf8_bom_directly(tmpdir):
-    with unittest.mock.patch('builtins.print') as mocked_print:
+    with patch('builtins.print') as mocked_print:
         f = Path(tmpdir.join('bom8.txt'))
         f.write_bytes(
             b'\xef\xbb\xbf'
@@ -89,8 +87,8 @@ def test_utf8_bom_directly(tmpdir):
             b'\x86\x98\xe3\x86\x92\xe3\x86\x9d',
         )
         assert no_boms.main((str(f),)) == 3
-        assert re.match(r'^.*[\\/]bom8\.txt: has a UTF-8 BOM$',
-                        mocked_print.call_args.args[0]) is not None
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('bom8.txt: has a UTF-8 BOM')
 
 
 def test_utf8_bom_via_encoding(tmpdir):

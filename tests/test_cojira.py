@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
+import re
 import subprocess
-import unittest
 from os import environ
 from typing import Any
-from unittest.mock import call
+from unittest.mock import patch
 from urllib import request
 from urllib.error import HTTPError
 from urllib.error import URLError
@@ -461,7 +461,7 @@ def test_jira_pat_as_env_var(tmpdir):
             (
                 'pseudo_commit_msg.txt', '-e=none',
                 '-u=http://banana', '-p=$YYYJIRA_PAT',
-            )
+            ),
         ) == 0
 
 
@@ -470,7 +470,7 @@ def test_version_empty_via_env_var(tmpdir):
     environ['EMPTY_VERSION'] = ''
     with (
         tmpdir.as_cwd(),
-        unittest.mock.patch('builtins.print') as mocked_print,
+        patch('builtins.print') as mocked_print,
     ):
         exec_cmd('git', 'init')
         f = tmpdir.join('pseudo_commit_msg.txt')
@@ -478,12 +478,14 @@ def test_version_empty_via_env_var(tmpdir):
         assert cojira.main(
             (
                 'pseudo_commit_msg.txt',
-                f'-v=$EMPTY_VERSION',
+                '-v=$EMPTY_VERSION',
                 '-u=http://banana', '-p=pat_on_the_back',
             ),
         ) == 0
-        assert call('Ticket fix version not checked') \
-            in mocked_print.mock_calls
+        assert mocked_print.call_args_list[-2].args[0] \
+            .endswith('Ticket fix version not checked')
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('Ticket is OK according to COJIRA rules')
 
 
 def test_version_multiple_via_env_var(tmpdir):
@@ -491,7 +493,7 @@ def test_version_multiple_via_env_var(tmpdir):
     environ['EMPTY_VERSION'] = 'a,b,version'
     with (
         tmpdir.as_cwd(),
-        unittest.mock.patch('builtins.print') as mocked_print,
+        patch('builtins.print') as mocked_print,
     ):
         exec_cmd('git', 'init')
         f = tmpdir.join('pseudo_commit_msg.txt')
@@ -499,26 +501,34 @@ def test_version_multiple_via_env_var(tmpdir):
         assert cojira.main(
             (
                 'pseudo_commit_msg.txt',
-                f'-v=$EMPTY_VERSION',
+                '-v=$EMPTY_VERSION',
                 '-u=http://banana', '-p=pat_on_the_back',
             ),
         ) == 0
-        assert call('Ticket fix version ("version") is allowed') \
-            in mocked_print.mock_calls
+        assert mocked_print.call_args_list[-3].args[0] \
+            .startswith('Ticket fix version ("version") is allowed')
         assert (
-            call('\t(allowed versions are: ({\'a\', \'b\', \'version\'}))') \
-                in mocked_print.mock_calls or
-            call('\t(allowed versions are: ({\'a\', \'version\', \'b\'}))') \
-                in mocked_print.mock_calls or
-            call('\t(allowed versions are: ({\'version\', \'a\', \'b\'}))') \
-                in mocked_print.mock_calls or
-            call('\t(allowed versions are: ({\'b\', \'a\', \'version\'}))') \
-                in mocked_print.mock_calls or
-            call('\t(allowed versions are: ({\'b\', \'version\', \'a\'}))') \
-                in mocked_print.mock_calls or
-            call('\t(allowed versions are: ({\'version\', \'b\', \'a\'}))') \
-                in mocked_print.mock_calls
+            mocked_print.call_args_list[-2].args[0].endswith(
+                '\t(allowed versions are: ({\'a\', \'b\', \'version\'}))',
+            ) or
+            mocked_print.call_args_list[-2].args[0].endswith(
+                '\t(allowed versions are: ({\'a\', \'version\', \'b\'}))',
+            ) or
+            mocked_print.call_args_list[-2].args[0].endswith(
+                '\t(allowed versions are: ({\'version\', \'a\', \'b\'}))',
+            ) or
+            mocked_print.call_args_list[-2].args[0].endswith(
+                '\t(allowed versions are: ({\'b\', \'a\', \'version\'}))',
+            ) or
+            mocked_print.call_args_list[-2].args[0].endswith(
+                '\t(allowed versions are: ({\'b\', \'version\', \'a\'}))',
+            ) or
+            mocked_print.call_args_list[-2].args[0].endswith(
+                '\t(allowed versions are: ({\'version\', \'b\', \'a\'}))',
+            )
         )
+        assert mocked_print.call_args_list[-1].args[0] \
+            .endswith('Ticket is OK according to COJIRA rules')
 
 
 @pytest.mark.parametrize(
@@ -531,7 +541,6 @@ def test_version_multiple_via_env_var(tmpdir):
             texts=[
                 'Lenient early exit, because no JIRA URI given',
             ],
-            alts=[],
         ),
         dict(
             e=4,
@@ -541,7 +550,6 @@ def test_version_multiple_via_env_var(tmpdir):
             texts=[
                 'Could not reify ticket from commit message',
             ],
-            alts=[],
         ),
         dict(
             e=3,
@@ -552,10 +560,9 @@ def test_version_multiple_via_env_var(tmpdir):
                 '-u=http://banana',
             ),
             texts=[
+                '\t\\(allowed versions are: \\({\'not-this-version\'}\\)\\)',
                 'Ticket has no fix version, but it is expected',
-                '\t(allowed versions are: ({\'not-this-version\'}))',
             ],
-            alts=[],
         ),
         dict(
             e=1,
@@ -563,12 +570,11 @@ def test_version_multiple_via_env_var(tmpdir):
             u=lambda _: MockedResponse('<this><is not="a"/><json/></this>'),
             args=('pseudo_commit_msg.txt', '-u=http://banana'),
             texts=[
+                '\t disallowed categories are: \\({\'done\'}\\)\\)',
+                '\t\\(allowed categories are: \\(\\),',
+                r'Ticket status category \("None"\) is not allowed',
                 'Ticket fix version not checked',
-                'Ticket status category ("None") is not allowed',
-                '\t(allowed categories are: (),',
-                '\t disallowed categories are: ({\'done\'}))',
             ],
-            alts=[],
         ),
         dict(
             e=2,
@@ -579,13 +585,9 @@ def test_version_multiple_via_env_var(tmpdir):
                 '-u=http://banana',
             ),
             texts=[
-                'Fix version of ticket ("version") is not allowed',
-            ],
-            alts=[
-                [
-                    '\t(allowed versions are: ({\'version2\', \'version3\'}))',
-                    '\t(allowed versions are: ({\'version3\', \'version2\'}))',
-                ],
+                '\t\\(allowed versions are: \\({\'version[23]\','
+                ' \'version[23]\'}\\)\\)',
+                r'Fix version of ticket \("version"\) is not allowed',
             ],
         ),
         dict(
@@ -597,15 +599,11 @@ def test_version_multiple_via_env_var(tmpdir):
                 '-u=http://banana',
             ),
             texts=[
-                'Checking ticket "ABC-123"',
-                'Ticket fix version ("version") is allowed',
                 'Ticket is OK according to COJIRA rules',
-            ],
-            alts=[
-                [
-                    '\t(allowed versions are: ({\'version2\', \'version\'}))',
-                    '\t(allowed versions are: ({\'version\', \'version2\'}))',
-                ],
+                '\t\\(allowed versions are: \\({\'version2?\','
+                ' \'version2?\'}\\)\\)',
+                r'Ticket fix version \("version"\) is allowed',
+                'Checking ticket "ABC-123"',
             ],
         ),
     ],
@@ -613,7 +611,7 @@ def test_version_multiple_via_env_var(tmpdir):
 def test_cojira_outputs(tmpdir, params):
     with (
         tmpdir.as_cwd(),
-        unittest.mock.patch('builtins.print') as mocked_print,
+        patch('builtins.print') as mocked_print,
     ):
         if params['u'] is not None:
             cojira.request.urlopen = params['u']
@@ -621,10 +619,8 @@ def test_cojira_outputs(tmpdir, params):
         f = tmpdir.join('pseudo_commit_msg.txt')
         f.write_text(params['msg'], encoding='utf-8')
         assert cojira.main(params['args']) == params['e']
+        index = -1
         for t in params['texts']:
-            assert call(t) in mocked_print.mock_calls
-        for p in params['alts']:
-            assert (
-                call(p[0]) in mocked_print.mock_calls or
-                call(p[1]) in mocked_print.mock_calls
-            )
+            assert re.match(t, mocked_print.call_args_list[index].args[0]) \
+                is not None
+            index -= 1

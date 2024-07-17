@@ -74,17 +74,17 @@ def test_non_utf_8(tmpdir):
         assert no_todos.main((str(f1),)) == 1
         for a in mocked_print.call_args_list:
             assert not a.args[0].endswith(
-                'todo_utf8_bom.txt: cannot be read as UTF-8, trying UTF-16'
+                'todo_utf8_bom.txt: cannot be read as UTF-8, trying UTF-16',
             )
         f2 = tmpdir.join('todo_utf16.txt')
         # noinspection SpellCheckingInspection
         f2.write_text('TODO: ¥eßűs, ∂éñ∂ þħïs!-1', encoding='utf-16')
-        assert no_todos.main((str(f1),str(f2))) == 2
+        assert no_todos.main((str(f1), str(f2))) == 2
         assert mocked_print.call_args_list[-2].args[0] \
             .endswith('todo_utf16.txt: cannot be read as UTF-8, trying UTF-16')
         f3 = tmpdir.join('todo_greek.txt')
         # noinspection SpellCheckingInspection
         f3.write_text('TODO: Υeσΰς, δέηδ ΤΞΪΣ!-1', encoding='ISO-8859-7')
-        assert no_todos.main((str(f1),str(f2),str(f3))) == 2
-        assert mocked_print.call_args_list[-1].args[0] \
+        assert no_todos.main((str(f1), str(f3), str(f2))) == 2
+        assert mocked_print.call_args_list[-3].args[0] \
             .endswith('todo_greek.txt: cannot be read as UTF-16, skipping it')
