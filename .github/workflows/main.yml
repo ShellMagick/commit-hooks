@@ -1,4 +1,4 @@
-name: Testing pipeline
+name: Typecheck & run tests
 
 on:
   push:
@@ -6,16 +6,87 @@ on:
     - 'main'
     - 'feature/*'
     - 'bugfix/*'
+  issue_comment:
+    types: [created]
 
 jobs:
-  sanity-run:
+  get-command:
     runs-on: ubuntu-latest
-    name: Run tests on lowest supported Python version on Ubuntu as a sanity-check before doing anything else
+    name: Get ref to check out (based on branch or PR)
+    permissions:
+      statuses: write
+    steps:
+    - name: Are we triggered by a known comment-command?
+      id: get-command
+      run: |
+        doTypeCheck=${{ contains(github.event.comment.body, '/type-check') }}
+        echo "doTypeCheck=$doTypeCheck" >> "$GITHUB_OUTPUT"
+        doMutate=${{ contains(github.event.comment.body, '/mutate') }}
+        echo "doMutate=$doMutate" >> "$GITHUB_OUTPUT"
+        doCombos=${{ contains(github.event.comment.body, '/combos') }}
+        echo "doCombos=$doCombos" >> "$GITHUB_OUTPUT"
+        doAll=${{ contains(github.event.comment.body, '/all-tests') }}
+        echo "doAll=$doAll" >> "$GITHUB_OUTPUT"
+        commentCommand=false
+        if [ "$doTypeCheck" = "true" ]; then
+          commentCommand=true
+          command="type-check"
+        elif [ "$doMutate" = "true" ]; then
+          commentCommand=true
+          command="mutate"
+        elif [ "$doCombos" = "true" ]; then
+          commentCommand=true
+          command="combos"
+        elif [ "$doAll" = "true" ]; then
+          commentCommand=true
+          command="all"
+        fi
+        echo "commentCommand=$commentCommand" >> "$GITHUB_OUTPUT"
+        echo "command=$command" >> "$GITHUB_OUTPUT"
+    - name: Get PR's branch name
+      id: from-pr
+      if: ${{ steps.get-command.outputs.commentCommand == 'true' }}
+      run: |
+        PR=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" ${{ github.event.issue.pull_request.url }})
+        echo "onPR=true" >> "$GITHUB_OUTPUT"
+        echo "branch=$(echo $PR | jq -r '.head.ref')" >> "$GITHUB_OUTPUT"
+        echo "sha=$(echo $PR | jq -r '.head.sha')" >> "$GITHUB_OUTPUT"
+    - name: Bind check in PR
+      id: bind-pr
+      if: ${{ steps.get-command.outputs.commentCommand == 'true' }}
+      uses: myrotvorets/set-commit-status-action@v2.0.1
+      with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ steps.from-pr.outputs.sha }}
+          status: pending
+          context: Run based on PR comment (${{ steps.get-command.outputs.command }})
+    - name: Get current branch name
+      id: from-branch
+      if: ${{ steps.get-command.outputs.commentCommand != 'true' }}
+      run: |
+        echo "onPR=false" >> "$GITHUB_OUTPUT"
+        echo "branch=${{ github.head_ref || github.ref_name }}" >> "$GITHUB_OUTPUT"
+        echo "sha=..." >> "$GITHUB_OUTPUT"
+    outputs:
+      commentCommand: ${{ steps.get-command.outputs.commentCommand }}
+      command: ${{ steps.get-command.outputs.command }}
+      doTypeCheck: ${{ steps.get-command.outputs.doTypeCheck }}
+      doMutate: ${{ steps.get-command.outputs.doMutate }}
+      doCombos: ${{ steps.get-command.outputs.doCombos }}
+      doAll: ${{ steps.get-command.outputs.doAll }}
+      onPR: ${{ steps.from-pr.outputs.onPR || steps.from-branch.outputs.onPR }}
+      branch: ${{ steps.from-pr.outputs.branch || steps.from-branch.outputs.branch }}
+      sha: ${{ steps.from-pr.outputs.sha || steps.from-branch.outputs.sha }}
+
+  coverage:
+    runs-on: ubuntu-latest
+    name: Check coverage
+    needs: [get-command]
     steps:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ needs.get-command.outputs.branch }}
     - uses: actions/setup-python@v5
       with:
         python-version: '3.9'
@@ -23,48 +94,82 @@ jobs:
     - run: pip install -r requirements-dev.txt
     - run: pytest --cov=hooks --cov-fail-under=100
 
-  main:
+  type-check:
+    if: ${{ (needs.get-command.outputs.onPR != 'true' && github.ref == 'refs/heads/main') || needs.get-command.outputs.doTypeCheck == 'true' || needs.get-command.outputs.doAll == 'true' }}
     runs-on: ubuntu-latest
-    name: Run all tests, run static type analysis, coverage, and mutation tests
-    needs: sanity-run
+    name: Type checking
+    needs: [get-command]
     steps:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ needs.get-command.outputs.branch }}
+    - uses: actions/setup-python@v5
+      with:
+        python-version: '3.9'
+    - run: python -m pip install --upgrade setuptools virtualenv
+    - run: pip install -r requirements-dev.txt
+    - run: mypy hooks
+
+  mutate:
+    if: ${{ (needs.get-command.outputs.onPR != 'true' && github.ref == 'refs/heads/main') || needs.get-command.outputs.doMutate == 'true' || needs.get-command.outputs.doAll == 'true' }}
+    runs-on: ubuntu-latest
+    name: Mutation tests
+    needs: [get-command, coverage]
+    steps:
+    - name: Checkout current branch
+      uses: actions/checkout@v4
+      with:
+        ref: ${{ needs.get-command.outputs.branch }}
     - uses: actions/setup-python@v5
       with:
         python-version: '3.12'
     - run: python -m pip install --upgrade setuptools virtualenv
     - run: pip install -r requirements-dev.txt
-    - run: mypy hooks
-    - run: pytest --cov=hooks --cov-fail-under=100
+    - run: pytest --cov=hooks
     - run: mutmut run --paths-to-mutate "./hooks/" --use-coverage --no-progress
 
   combos:
-    if: github.ref == 'refs/heads/main'
+    if: ${{ (needs.get-command.outputs.onPR != 'true' && github.ref == 'refs/heads/main') || needs.get-command.outputs.doCombos == 'true' || needs.get-command.outputs.doAll == 'true' }}
     runs-on: ${{ matrix.os }}
-    name: ${{ matrix.os }} / ${{ matrix.env }}
-    needs: main
+    name: Tests on ${{ matrix.os }} with Python ${{ matrix.env }}
+    needs: [get-command]
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
         env: ['3.9', '3.10', '3.11', '3.12']
         exclude:
-          # exclude the sanity-run combo, no need to re-run it
+          # exclude the coverage combo, no need to re-run it
           - os: ubuntu-latest
             env: '3.9'
-          # exclude the main combo, no need to re-run it
+          # exclude the mutate combo, no need to re-run it
           - os: ubuntu-latest
             env: '3.12'
     steps:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.ref_name }}
+        ref: ${{ needs.get-command.outputs.branch }}
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.env }}
     - run: python -m pip install --upgrade setuptools virtualenv
     - run: pip install -r requirements-dev.txt
     - run: pytest
+
+  update-pr:
+    if: ${{ always() }}
+    runs-on: ubuntu-latest
+    name: Report back in PR when triggered by comment
+    permissions:
+      statuses: write
+    needs: [get-command, type-check, mutate, combos]
+    steps:
+      - name: Set final commit status
+        uses: myrotvorets/set-commit-status-action@v2.0.1
+        if: ${{ needs.get-command.outputs.commentCommand == 'true' }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          sha: ${{ needs.get-command.outputs.sha }}
+          status: ${{ job.status }}
+          context: Run based on PR comment (${{ needs.get-command.outputs.command }})
