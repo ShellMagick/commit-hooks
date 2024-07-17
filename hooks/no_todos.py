@@ -27,8 +27,17 @@ def main(argv: Sequence[str] | None = None) -> int:
     result = 0
 
     for filename in args.filenames:
-        with open(filename, encoding='utf-8') as f:
-            lines = f.readlines()
+        try:
+            with open(filename, encoding='utf-8-sig') as f:
+                lines = f.readlines()
+        except (UnicodeDecodeError, UnicodeError):
+            print(f'{filename}: cannot be read as UTF-8, trying UTF-16')
+            try:
+                with open(filename, encoding='utf-16') as f:
+                    lines = f.readlines()
+            except (UnicodeDecodeError, UnicodeError):
+                print(f'{filename}: cannot be read as UTF-16, skipping it')
+                continue
 
         for tag in disallowed:
             for line in lines:
