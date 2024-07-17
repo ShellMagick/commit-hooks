@@ -1,4 +1,4 @@
-name: Testing pipeline
+name: Run tests
 
 on:
   push:
@@ -10,14 +10,33 @@ on:
     types: [created]
 
 jobs:
+  get-main-ref:
+    runs-on: ubuntu-latest
+    name: Get ref to check out (based on branch or PR)
+    steps:
+    - name: Get PR's branch name
+      id: from-pr
+      if: ${{ contains(github.event.comment.html_url, '/pull/') }}
+      run: |
+        PR=$(curl -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" ${{ github.event.issue.pull_request.url }})
+        echo "branch=$(echo $PR | jq -r '.head.ref')"
+    - name: Get current branch name
+      id: from-branch
+      if: ${{ !contains(github.event.comment.html_url, '/pull/') }}
+      run: |
+        echo "branch=${{ github.head_ref || github.ref_name }}"
+    outputs:
+      branch: ${{ steps.from-pr.outputs.branch || steps.from-branch.outputs.branch }}
+
   sanity-run:
     runs-on: ubuntu-latest
     name: Run tests on lowest supported Python version on Ubuntu as a sanity-check before doing anything else
+    needs: get-main-ref
     steps:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.head_ref || github.ref_name }}
+        ref: ${{ needs.get-main-ref.outputs.branch }}
     - uses: actions/setup-python@v5
       with:
         python-version: '3.9'
@@ -29,12 +48,12 @@ jobs:
     if: ${{ (github.ref == 'refs/heads/main') || (contains(github.event.comment.html_url, '/pull/') && (contains(github.event.comment.body, '/full-build') || contains(github.event.comment.body, '/mutate'))) }}
     runs-on: ubuntu-latest
     name: Run all tests, run static type analysis, coverage, and mutation tests
-    needs: sanity-run
+    needs: [get-main-ref, sanity-run]
     steps:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.head_ref || github.ref_name }}
+        ref: ${{ needs.get-main-ref.outputs.branch }}
     - uses: actions/setup-python@v5
       with:
         python-version: '3.12'
@@ -48,7 +67,7 @@ jobs:
     if: ${{ (github.ref == 'refs/heads/main') || (contains(github.event.comment.html_url, '/pull/') && contains(github.event.comment.body, '/full-build')) }}
     runs-on: ${{ matrix.os }}
     name: ${{ matrix.os }} / ${{ matrix.env }}
-    needs: main
+    needs: [get-main-ref, main]
     strategy:
       matrix:
         os: [windows-latest, ubuntu-latest, macos-latest]
@@ -64,7 +83,7 @@ jobs:
     - name: Checkout current branch
       uses: actions/checkout@v4
       with:
-        ref: ${{ github.head_ref || github.ref_name }}
+        ref: ${{ needs.get-main-ref.outputs.branch }}
     - uses: actions/setup-python@v5
       with:
         python-version: ${{ matrix.env }}
